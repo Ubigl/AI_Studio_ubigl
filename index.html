@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UBIGLab : AI Studio v2.2</title>
+    <script src="https://ubigl.club/wp-content/uploads/2025/04/e8f8704e-9d9b-44a1-babb-0df2f9ef3dc1.png"></script>
+    <style>
+        :root {
+            --bg-color: #0b0b0e;
+            --card-bg: #16161a;
+            --text-color: #e0e0e0;
+            --accent-color: #ff0055;
+            --accent-grad: linear-gradient(135deg, #ff0055, #ff5500);
+            --chat-user-bg: #ff0055;
+            --chat-ai-bg: #2a2a2e;
+            --input-bg: #222226;
+            --border-radius: 16px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 10px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 70px rgba(0,0,0,0.8);
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 90vh;
+        }
+
+        /* Лого и Шапка */
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo-img {
+            max-width: 100px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-color);
+            transition: 0.3s;
+        }
+        .logo-img:hover { transform: scale(1.05) rotate(5deg); }
+        
+        h1 a {
+            font-weight: 900; text-transform: uppercase; letter-spacing: 2px; font-size: 1.2em;
+            background: var(--accent-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-decoration: none; display: block; margin-top: 10px;
+        }
+
+        .social-links { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .social-btn {
+            padding: 8px 15px; color: white; text-decoration: none; font-weight: bold; border-radius: 20px; font-size: 12px;
+            text-transform: uppercase; transition: 0.2s;
+        }
+        .yt-btn { background: #FF0000; }
+        .tg-btn { background: #0088cc; }
+        .social-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+        /* Вкладки */
+        .tabs {
+            display: flex;
+            background: #000;
+            padding: 5px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            gap: 5px; 
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #777;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.3s;
+            font-size: 0.85em;
+        }
+        .tab-btn.active {
+            background: var(--accent-grad);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 0, 85, 0.4);
+        }
+
+        /* Контент */
+        .tab-content { display: none; animation: fadeIn 0.3s; flex: 1; flex-direction: column; }
+        .tab-content.active { display: flex; }
+
+        /* Элементы формы */
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.8em; color: #888; text-transform: uppercase; }
+        select, input, textarea {
+            width: 100%; padding: 14px; background-color: var(--input-bg); border: 1px solid #333; color: white;
+            border-radius: 12px; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.3s;
+        }
+        select:focus, textarea:focus, input:focus { border-color: var(--accent-color); }
+        optgroup { background: #1a1a1d; color: var(--accent-color); font-weight: bold; }
+        
+        .action-btn {
+            width: 100%; padding: 16px; color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 10px;
+            background: var(--accent-grad); transition: 0.2s;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 0, 85, 0.3); }
+        .download-btn { background: linear-gradient(135deg, #00c853, #64dd17); display: none; margin-top: 10px; }
+
+        /* Генератор картинок */
+        #image-container {
+            margin-top: 20px; min-height: 300px; display: flex; align-items: center; justify-content: center;
+            background: #08080a; border-radius: 12px; overflow: hidden; border: 2px dashed #333;
+        }
+        img.generated-img { max-width: 100%; height: auto; display: block; }
+        .loading { color: var(--accent-color); font-family: monospace; animation: pulse 1.5s infinite; }
+
+        /* Чат */
+        .chat-main-wrapper { display: flex; flex-direction: column; flex: 1; min-height: 400px; }
+        .chat-toolbar { display: flex; gap: 10px; margin-bottom: 10px; }
+        .tool-btn {
+            flex: 1; padding: 10px; border: 1px solid #333; background: #1f1f24; color: #aaa;
+            border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; text-transform: uppercase;
+        }
+        .tool-btn:hover { background: #333; color: white; }
+        .session-bar { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 5px; scrollbar-width: none; }
+        .session-bar::-webkit-scrollbar { display: none; }
+        .session-tab {
+            background: #222; color: #777; border: 1px solid #333; padding: 8px 15px; border-radius: 20px;
+            font-size: 12px; white-space: nowrap; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px;
+        }
+        .session-tab.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .chat-box {
+            flex: 1; overflow-y: auto; padding: 15px; background: #0f0f12; border-radius: 12px;
+            border: 1px solid #333; margin-bottom: 15px; display: none; flex-direction: column; gap: 15px;
+        }
+        .chat-box.active { display: flex; }
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; position: relative; }
+        .message.user { align-self: flex-end; background: var(--chat-user-bg); color: white; border-bottom-right-radius: 2px; }
+        .message.ai { align-self: flex-start; background: var(--chat-ai-bg); color: #ddd; border-bottom-left-radius: 2px; border: 1px solid #444; padding-top: 25px; }
+        .model-badge { position: absolute; top: 5px; left: 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: var(--accent-color); opacity: 0.8; }
+        .message.ai pre { background: #000; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+        .message.ai code { font-family: monospace; background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        .chat-controls { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 15px; border-radius: 12px; border: 1px solid #444; background: #222; color: white; outline: none; }
+        .send-btn { width: 50px; background: var(--accent-color); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; }
+
+        /* Помощник */
+        .helper-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .copy-box { background: #000; padding: 15px; border-radius: 12px; border: 1px solid #333; font-family: monospace; color: #00ff88; min-height: 80px; margin-top: 10px; position: relative; }
+        .copy-btn { position: absolute; top: 5px; right: 5px; background: #333; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 10px; text-transform: uppercase; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="header">
+        <img src="https://ubigl.club/wp-content/uploads/2025/04/e8f8704e-9d9b-44a1-babb-0df2f9ef3dc1.png" class="logo-img">
+        <h1><a href="https://www.youtube.com/channel/UCraR5uOxToeDAnQEdrVzUBQ" target="_blank">UBIGLab Project</a></h1>
+        <div class="social-links">
+            <a href="https://www.youtube.com/channel/UCraR5uOxToeDAnQEdrVzUBQ" target="_blank" class="social-btn yt-btn">YouTube</a>
+            <a href="https://t.me/ubiglab" class="social-btn tg-btn">Telegram</a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button id="btn-tab-art" class="tab-btn active" onclick="switchMainTab('art')">🎨 Рисовать</button>
+        <button id="btn-tab-chat" class="tab-btn" onclick="switchMainTab('chat')">💬 Чат</button>
+        <button id="btn-tab-helper" class="tab-btn" onclick="switchMainTab('helper')">📝 Промпты</button>
+    </div>
+
+    <div id="tab-art" class="tab-content active">
+        <div class="input-group">
+            <label>1. Выберите модель</label>
+            <select id="model-select">
+                <optgroup label="⭐ Самые стабильные (Быстро)">
+                    <option value="flux">🚀 Flux (База)</option>
+                    <option value="flux-realism">📸 Flux Realism (Фото)</option>
+                    <option value="turbo">⚡ SDXL Turbo (Моментально)</option>
+                    <option value="zimage">🧩 Z-Image</option>
+                </optgroup>
+
+                <optgroup label="💎 Flux Family">
+                    <option value="flux-anime">⛩️ Flux Anime</option>
+                    <option value="flux-3d">🧊 Flux 3D</option>
+                    <option value="flux-cablyai">💎 Flux CablyAI</option>
+                    <option value="flux-pro">🌟 Flux Pro</option>
+                </optgroup>
+
+                <optgroup label="⚠️ Большая очередь (Медленно)" style="color: #ffaa00;">
+                    <option value="majicmix" style="color: #ffcc00;">🟡 MajicMix Realistic</option>
+                    <option value="leosams-helloworld" style="color: #ffcc00;">🟡 Leosams Helloworld</option>
+                    <option value="realistic-vision" style="color: #ffcc00;">🟡 Realistic Vision</option>
+                    <option value="absolute-reality" style="color: #ffcc00;">🟡 Absolute Reality</option>
+                    <option value="kandinsky" style="color: #ffcc00;">🟡 Kandinsky</option>
+                    <option value="playground" style="color: #ffcc00;">🟡 Playground</option>
+                    <option value="niji" style="color: #ffcc00;">🟡 Niji Journey</option>
+                    <option value="dark-sushi" style="color: #ffcc00;">🟡 Dark Sushi</option>
+                    <option value="anything-v5" style="color: #ffcc00;">🟡 Anything V5</option>
+                    <option value="anything-v4" style="color: #ffcc00;">🟡 Anything V4</option>
+                </optgroup>
+
+                <optgroup label="📷 Остальные Фото">
+                    <option value="deliberate">🎯 Deliberate</option>
+                    <option value="cyberrealistic">🤖 CyberRealistic</option>
+                    <option value="dreamshaper">🐉 DreamShaper</option>
+                </optgroup>
+
+                <optgroup label="🎨 Остальные Арт">
+                    <option value="midjourney">🌌 Midjourney Style</option>
+                    <option value="anything-v3">🎎 Anything V3</option>
+                    <option value="meinamix">🖍️ MeinaMix</option>
+                    <option value="pixel">👾 Pixel Art</option>
+                </optgroup>
+
+                <optgroup label="🧪 Эксперименты">
+                    <option value="pixart">🖌️ PixArt</option>
+                    <option value="dalle">🎨 DALL-E</option>
+                    <option value="sdxl">💠 SDXL Base</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>2. Размер</label>
+            <select id="aspect-select">
+                <option value="1024x1024">🟦 Квадрат (1:1)</option>
+                <option value="720x1280">📱 Вертикаль (9:16)</option>
+                <option value="1280x720">🎬 Горизонталь (16:9)</option>
+                <option value="1024x1536">📕 Портрет (2:3)</option>
+                <option value="1536x1024">🖼️ Пейзаж (3:2)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>3. Описание</label>
+            <textarea id="prompt-input" rows="3" placeholder="Опиши картинку..."></textarea>
+        </div>
+
+        <button onclick="generateImage()" class="action-btn">🚀 Создать</button>
+        <button id="download-btn" onclick="downloadImage()" class="action-btn download-btn">⬇ Скачать (HD)</button>
+
+        <div id="image-container">
+            <div style="color:#555">Здесь будет результат</div>
+        </div>
+    </div>
+
+    <div id="tab-chat" class="tab-content">
+        <div class="input-group">
+            <label>Нейросеть 🧠</label>
+            <select id="chat-model-select">
+                <option value="openai-fast">⚡ GPT-4o Mini (Быстрый)</option>
+                <option value="gemini">✨ Gemini Pro (Google)</option>
+            </select>
+        </div>
+
+        <div class="chat-toolbar">
+            <button class="tool-btn new-chat" onclick="createNewChat()">+ Новый чат</button>
+            <button class="tool-btn clear-chat" onclick="clearCurrentChat()">🗑️ Очистить</button>
+        </div>
+
+        <div id="session-bar" class="session-bar"></div>
+
+        <div class="chat-main-wrapper">
+            <div id="chat-container" class="chat-container"></div>
+            <div class="chat-controls">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Сообщение..." onkeypress="handleEnter(event)">
+                <button onclick="sendMessage()" class="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-helper" class="tab-content">
+        <div class="input-group">
+            <label>Идея</label>
+            <input type="text" id="helper-base" placeholder="Кот в космосе...">
+        </div>
+        <div class="helper-grid">
+            <div class="input-group">
+                <label>Стиль</label>
+                <select id="helper-style">
+                    <option value="">Нет</option>
+                    <option value="Cyberpunk, neon">Киберпанк</option>
+                    <option value="Anime style">Аниме</option>
+                    <option value="Realistic 8k">Реализм</option>
+                    <option value="Dark fantasy">Дарк Фэнтези</option>
+                    <option value="3D render, blender">3D Blender</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Свет</label>
+                <select id="helper-light">
+                    <option value="">Нет</option>
+                    <option value="cinematic lighting">Киношный</option>
+                    <option value="neon lights">Неон</option>
+                    <option value="sunlight">Солнце</option>
+                </select>
+            </div>
+        </div>
+        <button onclick="buildPrompt()" class="action-btn" style="background: linear-gradient(135deg, #7b2cbf, #9d4edd);">✨ Собрать промпт</button>
+        <div class="copy-box" id="helper-output">
+            Тут будет промпт...
+            <button class="copy-btn" onclick="copyPrompt()">Копировать</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // === ВКЛАДКИ ===
+    function switchMainTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`btn-tab-${tab}`).classList.add('active');
+        document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    // === ГЕНЕРАЦИЯ КАРТИНОК ===
+    async function generateImage() {
+        const btn = document.querySelector('#tab-art .action-btn');
+        const dlBtn = document.getElementById('download-btn');
+        const container = document.getElementById('image-container');
+        dlBtn.style.display = 'none';
+
+        const prompt = document.getElementById('prompt-input').value;
+        const model = document.getElementById('model-select').value;
+        const aspect = document.getElementById('aspect-select').value;
+        let [w, h] = aspect.split('x').map(Number);
+
+        if (!prompt) { alert("Напиши описание!"); return; }
+
+        btn.disabled = true; btn.innerText = "⏳ Генерация...";
+        container.innerHTML = '<div class="loading">Запрос отправлен...</div>';
+
+        const seed = Math.floor(Math.random() * 10000000);
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=${w}&height=${h}&seed=${seed}&nologo=true&private=true&enhance=false`;
+
+        const img = new Image(); 
+        img.crossOrigin = "Anonymous"; 
+        img.className = "generated-img"; 
+        img.src = url;
+        
+        img.onload = () => { 
+            container.innerHTML = ""; 
+            container.appendChild(img); 
+            btn.disabled = false; 
+            btn.innerText = "🚀 Еще раз"; 
+            dlBtn.style.display = 'block'; 
+        };
+        
+        img.onerror = () => { 
+            container.innerHTML = "<p style='color:red'>Ошибка модели. Попробуй другую.</p>"; 
+            btn.disabled = false; 
+            btn.innerText = "🚀 Создать"; 
+        };
+    }
+
+    async function downloadImage() {
+        const img = document.querySelector('#image-container img');
+        if (!img) return;
+        try {
+            const blob = await (await fetch(img.src)).blob();
+            const link = document.createElement('a'); link.href = window.URL.createObjectURL(blob); link.download = `SeT_${Date.now()}.png`; link.click();
+        } catch (e) { window.open(img.src, '_blank'); }
+    }
+
+    // === ЧАТ ===
+    let chatSessions = [];
+    let activeChatId = null;
+    let chatCounter = 1;
+    const modelNames = {
+        'openai-fast': '⚡ GPT-4o Mini',
+        'gemini': '✨ Gemini Pro'
+    };
+
+    function initChat() { createNewChat(); }
+    function createNewChat() {
+        const id = 'chat-' + Date.now();
+        const name = `Диалог ${chatCounter++}`;
+        chatSessions.push({ id: id, name: name, history: [] });
+        
+        const tab = document.createElement('div');
+        tab.className = 'session-tab';
+        tab.id = `tab-${id}`;
+        tab.innerHTML = `${name} <span style="margin-left:5px;opacity:0.5" onclick="closeChat(event,'${id}')">x</span>`;
+        tab.onclick = (e) => { if(e.target.tagName !== 'SPAN') switchChat(id); };
+        document.getElementById('session-bar').appendChild(tab);
+
+        const box = document.createElement('div');
+        box.className = 'chat-box';
+        box.id = `box-${id}`;
+        box.innerHTML = `<div class="message ai"><span class="model-badge">AI</span>Привет!</div>`;
+        document.getElementById('chat-container').appendChild(box);
+        
+        switchChat(id);
+    }
+
+    function switchChat(id) {
+        activeChatId = id;
+        document.querySelectorAll('.session-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.add('active');
+        document.querySelectorAll('.chat-box').forEach(b => b.classList.remove('active'));
+        const box = document.getElementById(`box-${id}`);
+        box.classList.add('active');
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function closeChat(e, id) {
+        e.stopPropagation();
+        if(chatSessions.length <= 1) { clearCurrentChat(); return; }
+        chatSessions = chatSessions.filter(s => s.id !== id);
+        document.getElementById(`tab-${id}`).remove();
+        document.getElementById(`box-${id}`).remove();
+        if(activeChatId === id) switchChat(chatSessions[chatSessions.length-1].id);
+    }
+
+    function clearCurrentChat() {
+        if(!activeChatId) return;
+        chatSessions.find(s => s.id === activeChatId).history = [];
+        document.getElementById(`box-${activeChatId}`).innerHTML = `<div class="message ai"><span class="model-badge">AI</span>Чат очищен.</div>`;
+    }
+
+    function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+
+    async function sendMessage() {
+        if(!activeChatId) return;
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        const model = document.getElementById('chat-model-select').value;
+        const modelName = modelNames[model] || model;
+
+        if(!text) return;
+
+        const session = chatSessions.find(s => s.id === activeChatId);
+        const box = document.getElementById(`box-${activeChatId}`);
+
+        // User msg
+        const userDiv = document.createElement('div');
+        userDiv.className = 'message user';
+        userDiv.innerText = text;
+        box.appendChild(userDiv);
+        session.history.push({role: "user", content: text});
+        input.value = '';
+        box.scrollTop = box.scrollHeight;
+
+        // Loading
+        const loadDiv = document.createElement('div');
+        loadDiv.className = 'message ai';
+        loadDiv.innerHTML = `<span class="model-badge">...</span>Печатает...`;
+        box.appendChild(loadDiv);
+
+        try {
+            const resp = await fetch('https://text.pollinations.ai/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    messages: session.history,
+                    model: model,
+                    jsonMode: false
+                })
+            });
+            const data = await resp.text();
+            loadDiv.innerHTML = `<span class="model-badge">${modelName}</span>` + marked.parse(data);
+            session.history.push({role: "assistant", content: data});
+        } catch(e) {
+            loadDiv.innerText = "Ошибка соединения.";
+        }
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // === ПОМОЩНИК ===
+    function buildPrompt() {
+        const base = document.getElementById('helper-base').value;
+        if(!base) return alert("Нужна идея!");
+        const style = document.getElementById('helper-style').value;
+        const light = document.getElementById('helper-light').value;
+        let p = base;
+        if(style) p += `, ${style}`;
+        if(light) p += `, ${light}`;
+        p += ", best quality, 8k, detailed";
+        document.getElementById('helper-output').innerHTML = p + `<button class="copy-btn" onclick="copyPrompt()">Коп.</button>`;
+    }
+    function copyPrompt() {
+        const t = document.getElementById('helper-output').innerText.replace("Коп.", "").trim();
+        navigator.clipboard.writeText(t);
+        alert("Скопировано!");
+    }
+
+    initChat();
+</script>
+
+</body>
+</html>
